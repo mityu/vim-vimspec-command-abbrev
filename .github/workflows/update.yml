@@ -39,21 +39,22 @@ jobs:
         id: diff
         run: |
           if git diff --exit-code --ignore-matching-lines 'themis.vim\s+revision:.*' ftplugin/vimspec.vim; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo 'changed=no' >> "$GITHUB_OUTPUT"
           else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo 'changed=yes' >> "$GITHUB_OUTPUT"
+            git diff ftplugin/vimspec.vim > ./ftplugin-updates.patch
           fi
       - name: Upload updated repository archive
-        if: steps.diff.outputs.changed
+        if: ${{ steps.diff.outputs.changed == 'yes' }}
         uses: actions/upload-artifact@v7
         with:
-          name: updated-repo
-          path: .
+          name: patch-updates
+          path: ./ftplugin-updates.patch
 
   test:
     name: Test on ${{ matrix.vim_type }} ${{ matrix.vim_version }} on ${{ matrix.os }}
     needs: update
-    if: needs.update.outputs.changed
+    if: ${{ needs.update.outputs.changed == 'yes' }}
     strategy:
       fail-fast: false
       matrix:
@@ -79,9 +80,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
+      - uses: actions/checkout@v6
       - uses: actions/download-artifact@v8
         with:
-          name: updated-repo
+          name: patch-updates
+      - run: git apply ./ftplugin-updates.patch
+      - uses: actions/checkout@v6
+        with:
+          repository: thinca/vim-themis
+          path: themis
       - uses: thinca/action-setup-vim@v3
         id: vim
         with:
@@ -101,9 +108,11 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v6
       - uses: actions/download-artifact@v8
         with:
-          name: updated-repo
+          name: patch-updates
+      - run: git apply ./ftplugin-updates.patch
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"

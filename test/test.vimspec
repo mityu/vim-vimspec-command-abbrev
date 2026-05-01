@@ -1,0 +1,89 @@
+let s:assert = themis#helper('assert')
+call themis#helper('command').with(s:assert)
+call themis#func_alias(s:assert)
+
+Describe ftplugin/vimspec.vim
+  Before all
+    command -nargs=* -bang Normal execute 'normal<bang>' <args>
+    filetype plugin on
+  End
+
+  After all
+    delcommand Normal
+  End
+
+  Before each
+    set filetype=vimspec
+  End
+
+  After each
+    %bwipeout!
+  End
+
+  It expands :Describe when it appears at the head of line.
+    Normal "idescribe\<C-]>\<ESC>"
+    Assert Equals(getline('.'), 'Describe')
+  End
+
+  It expands :Describe even when there're some text after cursor.
+    call setline(1, ' XXX')
+    Normal "0idescribe\<C-]>\<ESC>"
+    Assert Equals(getline('.'), 'Describe XXX')
+  End
+
+  It does not expand :Describe when it is not at the head of line.
+    call setline(1, 'XXX')
+    Normal "A describe\<C-]>\<ESC>"
+    Assert Equals(getline('.'), 'XXX describe')
+  End
+
+  It expands "Equals" after :Assert.
+    call setline(1, 'Assert ')
+    Normal "Aequals\<C-]>\<ESC>"
+    Assert Equals(getline('.'), 'Assert Equals')
+  End
+
+  It expands "HasKey" after :Assert.
+    call setline(1, 'Assert ')
+    Normal "Ahaskey\<C-]>\<ESC>"
+    Assert Equals(getline('.'), 'Assert HasKey')
+  End
+
+  It expands "ToBeTrue" after :Expect.
+    call setline(1, 'Expect')
+    Normal "A tobetrue\<C-]>\<ESC>"
+    Assert Equals(getline('.'), 'Expect ToBeTrue')
+  End
+
+  It expands "Equals" after :Assert even when there're some text after cursor.
+    call setline(1, 'Assert xyz')
+    Normal "^ea equals\<C-]>\<ESC>"
+    Assert Equals(getline('.'), 'Assert Equals xyz')
+  End
+
+  It does not expand "equals" when it is not at after :Assert.
+    call setline(1, 'Assert XXX ')
+    Normal "Aequals\<C-]>\<ESC>"
+    Assert Equals(getline('.'), 'Assert XXX equals')
+  End
+
+  It does not expand "equals" other than after standalone :Assert.
+    call setline(1, 'XXX Assert ')
+    Normal "Aequals\<C-]>\<ESC>"
+    Assert Equals(getline('.'), 'XXX Assert equals')
+  End
+
+  It's abbrevs are cleaned up when filetype is changed.
+    Assert True(hasmapto('assert', 'i', 1))
+    set filetype=
+    Assert False(hasmapto('assert', 'i', 1))
+  End
+
+  It skips defining abbrevs when b:did_ftplugin is already set.
+    Skip b:did_ftplugin is ignored now.
+    %bwipeout!
+    let b:did_ftplugin = 1
+    set filetype=vimspec
+    Assert False(hasmapto('assert', 'i', 1))
+  End
+End

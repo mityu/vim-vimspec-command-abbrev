@@ -1,0 +1,102 @@
+name: Update ftplugin
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 0 * * *
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    name: Update ftplugin/vimspec.vim
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+        with:
+          repository: thinca/vim-themis
+          path: themis
+      - name: Generate ftplugin
+        env:
+          THEMIS_VIM_DIR: ${{ github.workspace }}/themis
+        run: ./_scripts/genftplugin.sh
+      - name: Check diff and commit
+        id: diff
+        run: |
+          if git diff --exit-code --ignore-matching-lines 'themis.vim\s+revision:.*' ftplugin/vimspec.vim; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Upload updated repository archive
+        if: steps.diff.outputs.changed
+        uses: actions/upload-artifact@v4
+        with:
+          name: updated-repo
+          path: .
+
+  test:
+    name: Test on ${{ matrix.vim_type }} ${{ matrix.vim_version }} on ${{ matrix.os }}
+    needs: update
+    if: needs.update.outputs.changed
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+        include:
+          - vim_type: vim
+            vim_version: v9.1.0000
+          - vim_type: vim
+            vim_version: v9.2.0000
+          - vim_type: vim
+            vim_version: head
+          - vim_type: neovim
+            vim_version: v0.10.0
+          - vim_type: neovim
+            vim_version: v0.11.0
+          - vim_type: neovim
+            vim_version: v0.12.0
+          - vim_type: neovim
+            vim_version: head
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: updated-repo
+      - uses: thinca/action-setup-vim@v3
+        id: vim
+        with:
+          vim_type: ${{ matrix.vim_type }}
+          vim_version: ${{ matrix.vim_version }}
+          download: available
+      - env:
+          THEMIS_VIM: ${{ steps.vim.outputs.executable }}
+        run: |
+          ./themis/bin/themis --reporter tap
+
+  push:
+    name: Push changes to repository
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: updated-repo
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ftplugin/vimspec.vim
+          git commit -m "feat: Automatic update of ftplugin by GHA"
+          git push

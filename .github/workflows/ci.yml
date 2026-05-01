@@ -27,12 +27,25 @@ jobs:
           - v9.1.0000
           - v9.2.0000
           - head
-    uses: mityu/workflow-run-vim-themis/.github/workflows/run-themis.yml@v20260116
-    with:
-      vim_type: vim
-      vim_version: ${{ matrix.vim_version }}
-      os: ${{ matrix.os }}
-      download: available
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: thinca/action-setup-vim@v3
+        id: vim
+        with:
+          vim_type: vim
+          vim_version: ${{ matrix.vim_version }}
+          download: ${{ matrix.os == 'ubuntu-latest' && 'never' || 'available' }}
+          gui: no
+      - uses: actions/checkout@v6
+        with:
+          repository: thinca/vim-themis
+          path: themis
+      - env:
+          THEMIS_VIM: ${{ steps.vim.outputs.executable }}
+        run: |
+          ./themis/bin/themis --reporter tap
 
   test-on-neovim:
     name: Test on Neovim ${{ matrix.vim_version }} on ${{ matrix.os }}

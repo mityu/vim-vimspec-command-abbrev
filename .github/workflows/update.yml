@@ -20,10 +20,21 @@ jobs:
         with:
           repository: thinca/vim-themis
           path: themis
+      - uses: thinca/action-setup-vim@v3
+        id: vim
+        with:
+          vim_version: v9.2.0300
+          download: available
+      - name: Vim version
+        run: |
+          "${{ steps.vim.outputs.executable }}" --version
       - name: Generate ftplugin
         env:
           THEMIS_VIM_DIR: ${{ github.workspace }}/themis
-        run: ./_scripts/genftplugin.sh
+        run: |
+          VIMDIR="$(dirname "${{ steps.vim.outputs.executable_path }}")"
+          export PATH=$VIMDIR:$PATH
+          ./_scripts/genftplugin.sh
       - name: Check diff and commit
         id: diff
         run: |
@@ -34,7 +45,7 @@ jobs:
           fi
       - name: Upload updated repository archive
         if: steps.diff.outputs.changed
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: updated-repo
           path: .
@@ -68,7 +79,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: updated-repo
       - uses: thinca/action-setup-vim@v3
@@ -76,7 +87,7 @@ jobs:
         with:
           vim_type: ${{ matrix.vim_type }}
           vim_version: ${{ matrix.vim_version }}
-          download: available
+          download: ${{ (matrix.vim_type == 'vim' && startsWith(matrix.os, 'ubuntu')) && 'never' || 'available' }}
       - env:
           THEMIS_VIM: ${{ steps.vim.outputs.executable }}
         run: |
@@ -90,7 +101,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: updated-repo
       - name: Commit and push

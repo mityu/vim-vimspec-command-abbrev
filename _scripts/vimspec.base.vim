@@ -20,3 +20,13 @@ function s:subcommand_abbrev(command, trigger, abbrev) abort
     return a:trigger
   endif
 endfunction
+
+function s:try_one_by_one(trigger, list) abort
+  for expr in a:list
+    let abbrev = eval(expr)
+    if abbrev !=# a:trigger
+      return abbrev
+    endif
+  endfor
+  return a:trigger
+endfunction

@@ -24,15 +24,22 @@ function s:subcommand_abbrev(command, trigger, abbrev) abort
   endif
 endfunction
 
+function s:try_one_by_one(trigger, list) abort
+  for expr in a:list
+    let abbrev = eval(expr)
+    if abbrev !=# a:trigger
+      return abbrev
+    endif
+  endfor
+  return a:trigger
+endfunction
+
 inoreabbrev <buffer> <expr> describe <SID>command_abbrev('describe', 'Describe')
 inoreabbrev <buffer> <expr> context <SID>command_abbrev('context', 'Context')
 inoreabbrev <buffer> <expr> before <SID>command_abbrev('before', 'Before')
 inoreabbrev <buffer> <expr> after <SID>command_abbrev('after', 'After')
 inoreabbrev <buffer> <expr> it <SID>command_abbrev('it', 'It')
 inoreabbrev <buffer> <expr> end <SID>command_abbrev('end', 'End')
-inoreabbrev <buffer> <expr> fail <SID>command_abbrev('fail', 'Fail')
-inoreabbrev <buffer> <expr> skip <SID>command_abbrev('skip', 'Skip')
-inoreabbrev <buffer> <expr> todo <SID>command_abbrev('todo', 'TODO')
 inoreabbrev <buffer> <expr> assert <SID>command_abbrev('assert', 'Assert')
 inoreabbrev <buffer> <expr> throws <SID>command_abbrev('throws', 'Throws')
 inoreabbrev <buffer> <expr> cmdexists <SID>subcommand_abbrev("Assert", 'cmdexists', 'CmdExists')
@@ -42,7 +49,6 @@ inoreabbrev <buffer> <expr> empty <SID>subcommand_abbrev("Assert", 'empty', 'Emp
 inoreabbrev <buffer> <expr> equal <SID>subcommand_abbrev("Assert", 'equal', 'Equal')
 inoreabbrev <buffer> <expr> equals <SID>subcommand_abbrev("Assert", 'equals', 'Equals')
 inoreabbrev <buffer> <expr> exists <SID>subcommand_abbrev("Assert", 'exists', 'Exists')
-inoreabbrev <buffer> <expr> fail <SID>subcommand_abbrev("Assert", 'fail', 'Fail')
 inoreabbrev <buffer> <expr> false <SID>subcommand_abbrev("Assert", 'false', 'False')
 inoreabbrev <buffer> <expr> falsy <SID>subcommand_abbrev("Assert", 'falsy', 'Falsy')
 inoreabbrev <buffer> <expr> haskey <SID>subcommand_abbrev("Assert", 'haskey', 'HasKey')
@@ -85,8 +91,6 @@ inoreabbrev <buffer> <expr> notincludes <SID>subcommand_abbrev("Assert", 'notinc
 inoreabbrev <buffer> <expr> notmatch <SID>subcommand_abbrev("Assert", 'notmatch', 'NotMatch')
 inoreabbrev <buffer> <expr> notsame <SID>subcommand_abbrev("Assert", 'notsame', 'NotSame')
 inoreabbrev <buffer> <expr> same <SID>subcommand_abbrev("Assert", 'same', 'Same')
-inoreabbrev <buffer> <expr> skip <SID>subcommand_abbrev("Assert", 'skip', 'Skip')
-inoreabbrev <buffer> <expr> todo <SID>subcommand_abbrev("Assert", 'todo', 'Todo')
 inoreabbrev <buffer> <expr> true <SID>subcommand_abbrev("Assert", 'true', 'True')
 inoreabbrev <buffer> <expr> truthy <SID>subcommand_abbrev("Assert", 'truthy', 'Truthy')
 inoreabbrev <buffer> <expr> typeof <SID>subcommand_abbrev("Assert", 'typeof', 'TypeOf')
@@ -112,10 +116,13 @@ inoreabbrev <buffer> <expr> tohavekey <SID>subcommand_abbrev("Expect", 'tohaveke
 inoreabbrev <buffer> <expr> tohavelength <SID>subcommand_abbrev("Expect", 'tohavelength', 'ToHaveLength')
 inoreabbrev <buffer> <expr> tomatch <SID>subcommand_abbrev("Expect", 'tomatch', 'ToMatch')
 inoreabbrev <buffer> <expr> withmessage <SID>subcommand_abbrev("Expect", 'withmessage', 'WithMessage')
+inoreabbrev <buffer> <expr> fail <SID>try_one_by_one('fail', ['<SID>command_abbrev(''fail'', ''Fail'')', '<SID>subcommand_abbrev("Assert", ''fail'', ''Fail'')'])
+inoreabbrev <buffer> <expr> skip <SID>try_one_by_one('skip', ['<SID>command_abbrev(''skip'', ''Skip'')', '<SID>subcommand_abbrev("Assert", ''skip'', ''Skip'')'])
+inoreabbrev <buffer> <expr> todo <SID>try_one_by_one('todo', ['<SID>command_abbrev(''todo'', ''TODO'')', '<SID>subcommand_abbrev("Assert", ''todo'', ''Todo'')'])
 
 if exists('b:undo_ftplugin')
   let b:undo_ftplugin = ' | ' . b:undo_ftplugin
 else
   let b:undo_ftplugin = ''
 endif
-let b:undo_ftplugin = 'execute ''iunabbrev <buffer> describe''|execute ''iunabbrev <buffer> context''|execute ''iunabbrev <buffer> before''|execute ''iunabbrev <buffer> after''|execute ''iunabbrev <buffer> it''|execute ''iunabbrev <buffer> end''|execute ''iunabbrev <buffer> fail''|execute ''iunabbrev <buffer> skip''|execute ''iunabbrev <buffer> todo''|execute ''iunabbrev <buffer> assert''|execute ''iunabbrev <buffer> throws''|execute ''iunabbrev <buffer> cmdexists''|execute ''iunabbrev <buffer> cmdnotexists''|execute ''iunabbrev <buffer> compare''|execute ''iunabbrev <buffer> empty''|execute ''iunabbrev <buffer> equal''|execute ''iunabbrev <buffer> equals''|execute ''iunabbrev <buffer> exists''|execute ''iunabbrev <buffer> fail''|execute ''iunabbrev <buffer> false''|execute ''iunabbrev <buffer> falsy''|execute ''iunabbrev <buffer> haskey''|execute ''iunabbrev <buffer> includes''|execute ''iunabbrev <buffer> isblob''|execute ''iunabbrev <buffer> isbool''|execute ''iunabbrev <buffer> ischannel''|execute ''iunabbrev <buffer> isdict''|execute ''iunabbrev <buffer> isdictionary''|execute ''iunabbrev <buffer> isfloat''|execute ''iunabbrev <buffer> isfunc''|execute ''iunabbrev <buffer> isfunction''|execute ''iunabbrev <buffer> isjob''|execute ''iunabbrev <buffer> islist''|execute ''iunabbrev <buffer> isnone''|execute ''iunabbrev <buffer> isnotblob''|execute ''iunabbrev <buffer> isnotbool''|execute ''iunabbrev <buffer> isnotchannel''|execute ''iunabbrev <buffer> isnotdict''|execute ''iunabbrev <buffer> isnotdictionary''|execute ''iunabbrev <buffer> isnotfloat''|execute ''iunabbrev <buffer> isnotfunc''|execute ''iunabbrev <buffer> isnotfunction''|execute ''iunabbrev <buffer> isnotjob''|execute ''iunabbrev <buffer> isnotlist''|execute ''iunabbrev <buffer> isnotnone''|execute ''iunabbrev <buffer> isnotnumber''|execute ''iunabbrev <buffer> isnotstring''|execute ''iunabbrev <buffer> isnumber''|execute ''iunabbrev <buffer> isstring''|execute ''iunabbrev <buffer> keyexists''|execute ''iunabbrev <buffer> keynotexists''|execute ''iunabbrev <buffer> lengthof''|execute ''iunabbrev <buffer> match''|execute ''iunabbrev <buffer> notempty''|execute ''iunabbrev <buffer> notequal''|execute ''iunabbrev <buffer> notequals''|execute ''iunabbrev <buffer> notexists''|execute ''iunabbrev <buffer> notincludes''|execute ''iunabbrev <buffer> notmatch''|execute ''iunabbrev <buffer> notsame''|execute ''iunabbrev <buffer> same''|execute ''iunabbrev <buffer> skip''|execute ''iunabbrev <buffer> todo''|execute ''iunabbrev <buffer> true''|execute ''iunabbrev <buffer> truthy''|execute ''iunabbrev <buffer> typeof''|execute ''iunabbrev <buffer> tobedict''|execute ''iunabbrev <buffer> tobeempty''|execute ''iunabbrev <buffer> tobefalse''|execute ''iunabbrev <buffer> tobefalsy''|execute ''iunabbrev <buffer> tobefloat''|execute ''iunabbrev <buffer> tobefunc''|execute ''iunabbrev <buffer> tobegreaterthan''|execute ''iunabbrev <buffer> tobegreaterthanorequal''|execute ''iunabbrev <buffer> tobelessthan''|execute ''iunabbrev <buffer> tobelessthanorequal''|execute ''iunabbrev <buffer> tobelist''|execute ''iunabbrev <buffer> tobenumber''|execute ''iunabbrev <buffer> tobesame''|execute ''iunabbrev <buffer> tobestring''|execute ''iunabbrev <buffer> tobetrue''|execute ''iunabbrev <buffer> tobetruthy''|execute ''iunabbrev <buffer> toequal''|execute ''iunabbrev <buffer> toexist''|execute ''iunabbrev <buffer> tohavekey''|execute ''iunabbrev <buffer> tohavelength''|execute ''iunabbrev <buffer> tomatch''|execute ''iunabbrev <buffer> withmessage''' . b:undo_ftplugin
+let b:undo_ftplugin = 'execute ''iunabbrev <buffer> after''|execute ''iunabbrev <buffer> assert''|execute ''iunabbrev <buffer> before''|execute ''iunabbrev <buffer> cmdexists''|execute ''iunabbrev <buffer> cmdnotexists''|execute ''iunabbrev <buffer> compare''|execute ''iunabbrev <buffer> context''|execute ''iunabbrev <buffer> describe''|execute ''iunabbrev <buffer> empty''|execute ''iunabbrev <buffer> end''|execute ''iunabbrev <buffer> equal''|execute ''iunabbrev <buffer> equals''|execute ''iunabbrev <buffer> exists''|execute ''iunabbrev <buffer> fail''|execute ''iunabbrev <buffer> false''|execute ''iunabbrev <buffer> falsy''|execute ''iunabbrev <buffer> haskey''|execute ''iunabbrev <buffer> includes''|execute ''iunabbrev <buffer> isblob''|execute ''iunabbrev <buffer> isbool''|execute ''iunabbrev <buffer> ischannel''|execute ''iunabbrev <buffer> isdict''|execute ''iunabbrev <buffer> isdictionary''|execute ''iunabbrev <buffer> isfloat''|execute ''iunabbrev <buffer> isfunc''|execute ''iunabbrev <buffer> isfunction''|execute ''iunabbrev <buffer> isjob''|execute ''iunabbrev <buffer> islist''|execute ''iunabbrev <buffer> isnone''|execute ''iunabbrev <buffer> isnotblob''|execute ''iunabbrev <buffer> isnotbool''|execute ''iunabbrev <buffer> isnotchannel''|execute ''iunabbrev <buffer> isnotdict''|execute ''iunabbrev <buffer> isnotdictionary''|execute ''iunabbrev <buffer> isnotfloat''|execute ''iunabbrev <buffer> isnotfunc''|execute ''iunabbrev <buffer> isnotfunction''|execute ''iunabbrev <buffer> isnotjob''|execute ''iunabbrev <buffer> isnotlist''|execute ''iunabbrev <buffer> isnotnone''|execute ''iunabbrev <buffer> isnotnumber''|execute ''iunabbrev <buffer> isnotstring''|execute ''iunabbrev <buffer> isnumber''|execute ''iunabbrev <buffer> isstring''|execute ''iunabbrev <buffer> it''|execute ''iunabbrev <buffer> keyexists''|execute ''iunabbrev <buffer> keynotexists''|execute ''iunabbrev <buffer> lengthof''|execute ''iunabbrev <buffer> match''|execute ''iunabbrev <buffer> notempty''|execute ''iunabbrev <buffer> notequal''|execute ''iunabbrev <buffer> notequals''|execute ''iunabbrev <buffer> notexists''|execute ''iunabbrev <buffer> notincludes''|execute ''iunabbrev <buffer> notmatch''|execute ''iunabbrev <buffer> notsame''|execute ''iunabbrev <buffer> same''|execute ''iunabbrev <buffer> skip''|execute ''iunabbrev <buffer> throws''|execute ''iunabbrev <buffer> tobedict''|execute ''iunabbrev <buffer> tobeempty''|execute ''iunabbrev <buffer> tobefalse''|execute ''iunabbrev <buffer> tobefalsy''|execute ''iunabbrev <buffer> tobefloat''|execute ''iunabbrev <buffer> tobefunc''|execute ''iunabbrev <buffer> tobegreaterthan''|execute ''iunabbrev <buffer> tobegreaterthanorequal''|execute ''iunabbrev <buffer> tobelessthan''|execute ''iunabbrev <buffer> tobelessthanorequal''|execute ''iunabbrev <buffer> tobelist''|execute ''iunabbrev <buffer> tobenumber''|execute ''iunabbrev <buffer> tobesame''|execute ''iunabbrev <buffer> tobestring''|execute ''iunabbrev <buffer> tobetrue''|execute ''iunabbrev <buffer> tobetruthy''|execute ''iunabbrev <buffer> todo''|execute ''iunabbrev <buffer> toequal''|execute ''iunabbrev <buffer> toexist''|execute ''iunabbrev <buffer> tohavekey''|execute ''iunabbrev <buffer> tohavelength''|execute ''iunabbrev <buffer> tomatch''|execute ''iunabbrev <buffer> true''|execute ''iunabbrev <buffer> truthy''|execute ''iunabbrev <buffer> typeof''|execute ''iunabbrev <buffer> withmessage''' . b:undo_ftplugin

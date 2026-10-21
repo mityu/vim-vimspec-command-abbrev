@@ -79,6 +79,19 @@ Describe ftplugin/vimspec.vim
     Assert False(hasmapto('assert', 'i', 1))
   End
 
+  Context duplicate trigger word
+    It expands "Fail" at the head of line.
+      Normal "ifail\<C-]>\<ESC>"
+      Assert Equals(getline('.'), 'Fail')
+    End
+
+    It expands "Fail" after :Assert.
+      call setline(1, 'Assert ')
+      Normal "Afail\<C-]>\<ESC>"
+      Assert Equals(getline('.'), 'Assert Fail')
+    End
+  End
+
   It skips defining abbrevs when b:did_ftplugin is already set.
     Skip b:did_ftplugin is ignored now.
     %bwipeout!

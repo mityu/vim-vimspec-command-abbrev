@@ -10,6 +10,43 @@ function s:to_camel_case(text) abort
   return substitute(a:text, '\%(^\|_\)\(\w\)', '\=toupper(submatch(1))', 'g')
 endfunction
 
+function s:partition(list, pred) abort
+  let retval = [[], []]
+  for v in a:list
+    call extend(retval[call(a:pred, [v]) ? 0 : 1], [v])
+  endfor
+  return retval
+endfunction
+
+function s:find_duplicate_entries(list) abort
+  let dup = {}
+  let seen = {}
+  for v in a:list
+    if has_key(seen, v)
+      let dup[v] = v:true
+    else
+      let seen[v] = v:true
+    endif
+  endfor
+  return dup
+endfunction
+
+function s:merge_duplicate_abbrev(abbrevs) abort
+  let dups = s:find_duplicate_entries(a:abbrevs->copy()->map({ _, v -> v[0] }))
+  let [should_merge, defabbrevs] = s:partition(a:abbrevs, { v -> has_key(dups, v[0]) })
+  let merge_table = {}
+  for v in should_merge
+    if !has_key(merge_table, v[0])
+      let merge_table[v[0]] = []
+    endif
+    call add(merge_table[v[0]], v[1])
+  endfor
+  for [k, v] in items(merge_table)
+    call add(defabbrevs, [k, $'<SID>try_one_by_one({string(k)}, {string(v)})'])
+  endfor
+  return defabbrevs
+endfunction
+
 function s:main() abort
   if trim($THEMIS_VIM_DIR) ==# ''
     throw '$THEMIS_VIM_DIR is empty.'
@@ -54,8 +91,8 @@ function s:main() abort
 
   for command in commands
     let trigger = tolower(command)
-    call add(defabbrevs, $'inoreabbrev <buffer> <expr> {trigger} <SID>command_abbrev({string(trigger)}, {string(command)})')
-    call add(undefabbrevs, $'iunabbrev <buffer> {trigger}')
+    call add(defabbrevs, [trigger, $'<SID>command_abbrev({string(trigger)}, {string(command)})'])
+    call add(undefabbrevs, trigger)
   endfor
 
   let subcommands = getcompletion('themis-helper-assert-', 'help')
@@ -65,8 +102,8 @@ function s:main() abort
   for subcmd in subcommands
     let trigger = tolower(substitute(subcmd, '_', '', 'g'))
     let abbrev = s:to_camel_case(subcmd)
-    call add(defabbrevs, $'inoreabbrev <buffer> <expr> {trigger} <SID>subcommand_abbrev("Assert", {string(trigger)}, {string(abbrev)})')
-    call add(undefabbrevs, $'iunabbrev <buffer> {trigger}')
+    call add(defabbrevs, [trigger, $'<SID>subcommand_abbrev("Assert", {string(trigger)}, {string(abbrev)})'])
+    call add(undefabbrevs, trigger)
   endfor
 
   let subcommands = getcompletion('themis-helper-expect-', 'help')
@@ -76,12 +113,16 @@ function s:main() abort
   for subcmd in subcommands
     let trigger = tolower(substitute(subcmd, '_', '', 'g'))
     let abbrev = s:to_camel_case(subcmd)
-    call add(defabbrevs, $'inoreabbrev <buffer> <expr> {trigger} <SID>subcommand_abbrev("Expect", {string(trigger)}, {string(abbrev)})')
-    call add(undefabbrevs, $'iunabbrev <buffer> {trigger}')
+    call add(defabbrevs, [trigger, $'<SID>subcommand_abbrev("Expect", {string(trigger)}, {string(abbrev)})'])
+    call add(undefabbrevs, trigger)
   endfor
 
+  let defabbrevcmds = defabbrevs
+    \->s:merge_duplicate_abbrev()
+    \->map({ _, v -> $'inoreabbrev <buffer> <expr> {v[0]} {v[1]}' })
   call add(ftplugin, '')
-  call extend(ftplugin, defabbrevs)
+  call extend(ftplugin, defabbrevcmds)
+
   let undo_ftplugin_prelude =<< trim END
     if exists('b:undo_ftplugin')
       let b:undo_ftplugin = ' | ' . b:undo_ftplugin
@@ -89,7 +130,12 @@ function s:main() abort
       let b:undo_ftplugin = ''
     endif
   END
-  let undo_ftplugin = undefabbrevs->map({ _, v -> $'execute {string(v)}' })->join('|')
+  let undo_ftplugin = undefabbrevs
+    \->sort()
+    \->uniq()
+    \->map({ _, v -> $'iunabbrev <buffer> {v}'})
+    \->map({ _, v -> $'execute {string(v)}' })
+    \->join('|')
   call add(ftplugin, '')
   call extend(ftplugin, undo_ftplugin_prelude)
   call add(ftplugin, $'let b:undo_ftplugin = {string(undo_ftplugin)} . b:undo_ftplugin')

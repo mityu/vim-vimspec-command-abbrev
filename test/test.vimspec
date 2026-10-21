@@ -74,9 +74,9 @@ Describe ftplugin/vimspec.vim
   End
 
   It's abbrevs are cleaned up when filetype is changed.
-    Assert True(hasmapto('assert', 'i', 1))
+    Assert NotEmpty(maparg('assert', 'i', 1))
     set filetype=
-    Assert False(hasmapto('assert', 'i', 1))
+    Assert Empty(maparg('assert', 'i', 1))
   End
 
   Context duplicate trigger word
@@ -92,11 +92,57 @@ Describe ftplugin/vimspec.vim
     End
   End
 
+  Context with user-defined abbrev
+    Context global-abbrev
+      Before each
+        enew
+        iabbrev describe UserDescribe
+        set filetype=vimspec
+      End
+
+      After each
+        iunabbrev describe
+      End
+
+      It does not overwrite user-defined abbrev.
+        Normal "idescribe\<C-]>\<ESC>"
+        Assert Equals(getline('.'), 'UserDescribe')
+      End
+
+      It does not clear user-defined abbrev by b:undo_ftplugin.
+        set filetype=
+        Assert NotEmpty(maparg('describe', 'i', 1))
+      End
+    End
+
+    Context buffer-local-abbrev
+      Before each
+        enew
+        iabbrev <buffer> describe UserDescribe
+        set filetype=vimspec
+      End
+
+      After each
+        iunabbrev <buffer> describe
+      End
+
+      It does not overwrite user-defined abbrev.
+        Normal "idescribe\<C-]>\<ESC>"
+        Assert Equals(getline('.'), 'UserDescribe')
+      End
+
+      It does not clear user-defined abbrev by b:undo_ftplugin.
+        set filetype=
+        Assert NotEmpty(maparg('describe', 'i', 1))
+      End
+    End
+  End
+
   It skips defining abbrevs when b:did_ftplugin is already set.
     Skip b:did_ftplugin is ignored now.
     %bwipeout!
     let b:did_ftplugin = 1
     set filetype=vimspec
-    Assert False(hasmapto('assert', 'i', 1))
+    Assert Empty(maparg('assert', 'i', 1))
   End
 End

@@ -119,26 +119,20 @@ function s:main() abort
 
   let defabbrevcmds = defabbrevs
     \->s:merge_duplicate_abbrev()
-    \->map({ _, v -> $'inoreabbrev <buffer> <expr> {v[0]} {v[1]}' })
+    \->map({ _, v -> $'call s:set_abbrev({string(v[0])}, {string(v[1])})' })
   call add(ftplugin, '')
   call extend(ftplugin, defabbrevcmds)
 
-  let undo_ftplugin_prelude =<< trim END
+  let undo_ftplugin =<< trim END
     if exists('b:undo_ftplugin')
       let b:undo_ftplugin = ' | ' . b:undo_ftplugin
     else
       let b:undo_ftplugin = ''
     endif
+    let b:undo_ftplugin = $'call {expand('<SID>')}clear_abbrevs({string(s:defined_abbrev_triggers->sort()->uniq())})' . b:undo_ftplugin
   END
-  let undo_ftplugin = undefabbrevs
-    \->sort()
-    \->uniq()
-    \->map({ _, v -> $'iunabbrev <buffer> {v}'})
-    \->map({ _, v -> $'execute {string(v)}' })
-    \->join('|')
   call add(ftplugin, '')
-  call extend(ftplugin, undo_ftplugin_prelude)
-  call add(ftplugin, $'let b:undo_ftplugin = {string(undo_ftplugin)} . b:undo_ftplugin')
+  call extend(ftplugin, undo_ftplugin)
 
   call writefile(ftplugin, fnamemodify(s:scriptdir, ':h') .. '/ftplugin/vimspec.vim')
 endfunction

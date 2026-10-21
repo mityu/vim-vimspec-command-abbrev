@@ -5,6 +5,8 @@
 "   finish
 " endif
 
+let s:defined_abbrev_triggers = []
+
 function s:command_abbrev(trigger, abbrev) abort
   if strpart(getline('.'), 0, col('.') - 1)->trim() ==# a:trigger
     return a:abbrev
@@ -29,4 +31,18 @@ function s:try_one_by_one(trigger, list) abort
     endif
   endfor
   return a:trigger
+endfunction
+
+function s:set_abbrev(trigger, expr) abort
+  if maparg(a:trigger, 'i', v:true) ==# ''
+    execute $'inoreabbrev <buffer> <expr> {a:trigger} {a:expr}'
+    call add(s:defined_abbrev_triggers, a:trigger)
+  endif
+endfunction
+
+function s:clear_abbrevs(triggers) abort
+  eval a:triggers
+    \->copy()
+    \->map({ _, trigger -> $'iunabbrev <buffer> {trigger}' })
+    \->execute()
 endfunction

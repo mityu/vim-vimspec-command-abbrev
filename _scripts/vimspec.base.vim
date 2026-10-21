@@ -46,3 +46,13 @@ function s:clear_abbrevs(triggers) abort
     \->map({ _, trigger -> $'iunabbrev <buffer> {trigger}' })
     \->execute()
 endfunction
+
+{{body}}
+
+if exists('b:undo_ftplugin')
+  let b:undo_ftplugin = ' | ' . b:undo_ftplugin
+else
+  let b:undo_ftplugin = ''
+endif
+let b:undo_ftplugin = $'call {expand('<SID>')}clear_abbrevs({string(s:defined_abbrev_triggers->sort()->uniq())})' . b:undo_ftplugin
+unlet s:defined_abbrev_triggers

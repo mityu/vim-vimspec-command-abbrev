@@ -142,3 +142,4 @@ else
   let b:undo_ftplugin = ''
 endif
 let b:undo_ftplugin = $'call {expand('<SID>')}clear_abbrevs({string(s:defined_abbrev_triggers->sort()->uniq())})' . b:undo_ftplugin
+unlet s:defined_abbrev_triggers

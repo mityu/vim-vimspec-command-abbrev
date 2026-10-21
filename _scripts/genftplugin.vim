@@ -66,7 +66,7 @@ function s:main() abort
     let trigger = tolower(substitute(subcmd, '_', '', 'g'))
     let abbrev = s:to_camel_case(subcmd)
     call add(defabbrevs, $'inoreabbrev <buffer> <expr> {trigger} <SID>subcommand_abbrev("Assert", {string(trigger)}, {string(abbrev)})')
-    call add(undefabbrevs, $'inoreabbrev <buffer> {trigger}')
+    call add(undefabbrevs, $'iunabbrev <buffer> {trigger}')
   endfor
 
   let subcommands = getcompletion('themis-helper-expect-', 'help')
@@ -77,7 +77,7 @@ function s:main() abort
     let trigger = tolower(substitute(subcmd, '_', '', 'g'))
     let abbrev = s:to_camel_case(subcmd)
     call add(defabbrevs, $'inoreabbrev <buffer> <expr> {trigger} <SID>subcommand_abbrev("Expect", {string(trigger)}, {string(abbrev)})')
-    call add(undefabbrevs, $'inoreabbrev <buffer> {trigger}')
+    call add(undefabbrevs, $'iunabbrev <buffer> {trigger}')
   endfor
 
   call add(ftplugin, '')
